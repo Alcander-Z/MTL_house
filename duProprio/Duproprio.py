@@ -10,12 +10,18 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 class Crawler(object):
 
-    def __init__(self):
+    def __init__(self, max_page=1):
+        # max search pages to crawl
+        self.max_pages = max_page
+        # house page url pools
         self.url_pool = list()
+        # to-save file directory
         self.file_path = os.path.join(BASE_DIR, 'jsonfiles')
+        os.makedirs(self.file_path, exist_ok=True)
+        # base url to crawl, need .format(prev_page, current_page)
         self.base_url = 'https://duproprio.com/en/search/list?search=true&is_for_sale=1&' \
                    'with_builders=1&parent={}&pageNumber={}&sort=-published_at'
-        self.max_pages = 1
+        # buffer for house information
         self.data = list()
 
     def start(self):
@@ -27,14 +33,14 @@ class Crawler(object):
 
         url = self.base_url.format(prev_page, page)
 
-        self.parse_search_page(self.request(url))
+        self._parse_search_page(self._request(url))
 
         while self.url_pool:
             url = self.url_pool.pop(0)
-            house = self.parser_house_page(self.request(url))
+            house = self._parser_house_page(self._request(url))
             self.data.append(house)
 
-    def request(self, url, waittime=1):
+    def _request(self, url, waittime=1):
         sleep(waittime)
 
         try:
@@ -46,7 +52,7 @@ class Crawler(object):
 
         return soup
 
-    def parse_search_page(self, soup):
+    def _parse_search_page(self, soup):
 
         def find_all_listings(tag):
             condition = False
@@ -59,7 +65,7 @@ class Crawler(object):
         for item in listings:
             self.url_pool.append(item.a['href'])
 
-    def parser_house_page(self, soup):
+    def _parser_house_page(self, soup):
         # find price
         price_tag = soup.find('div', attrs={'class': "listing-price__amount"})
         for string in price_tag.stripped_strings:
@@ -81,25 +87,56 @@ class Crawler(object):
         )
 
         # find characteristics
-        character = {}
+        character = {
+            'bedrooms': 0.0,
+            'bathrooms': 0.0,
+            'level': None,
+            'area': None,
+        }
         characteristics_tag = soup.find('div', attrs={'class': "listing-main-characteristics"})
         for item in characteristics_tag.find_all('div', attrs={'class': "listing-main-characteristics__item"}):
             elems = item.find_all('span')
             key = elems[-1].string.strip()
-            val = elems[0].string.strip()
-            if key in ['bedroom', 'bedrooms', 'bathroom', 'bathrooms', 'half bath', 'level']:
-                character[key] = val
+            value = elems[0].string.strip()
+            if key == 'bedroom':
+                character['bedrooms'] = float(value)
+            elif key == 'bedrooms':
+                character['bedrooms'] = float(value)
+            elif key == 'bathroom':
+                character['bathrooms'] = float(value)
+            elif key == 'half bath':
+                character['bathrooms'] += 0.5
+            elif key == 'level':
+                character['level'] = int(value)
+            elif value == 'Living space area (basement exclu.)':
+                character['area'] = float(key.split()[0])
+            elif value == 'Lot dimensions':
+                if not character['area']:
+                    character['area'] = float(key.split()[0])
 
         # find detail
-        detail = {}
+        detail = {
+            'ownership': None,
+            'floor_if_condo': None,
+            'municipal': None,
+            'backyard': None,
+            'year': None,
+        }
         detail_tag = soup.find('div', attrs={'class': "listing-list-characteristics__viewport"})
         for item in detail_tag.find_all('div', attrs={'class': "listing-box__dotted-row"}):
             elems = item.find_all('div')
             key = elems[0].string.strip()
-            val = elems[-1].string.strip()
-            if key in ['Ownership', 'Located on which floor? (if condo)',
-                       'Municipal Assessment', 'Backyard Faces', 'Year of construction']:
-                detail[key] = val
+            value = elems[-1].string.strip()
+            if key == 'Ownership':
+                detail['ownership'] = value
+            elif key == 'Located on which floor? (if condo)':
+                detail['floor_if_condo'] = int(value)
+            elif key == 'Municipal Assessment':
+                detail['municipal'] = int(value[1:].replace(',', ''))
+            elif key == 'Backyard Faces':
+                detail['backyard'] = value
+            elif key == 'Year of construction':
+                detail['year'] = int(value)
 
         return {
             'category': category,
@@ -113,8 +150,10 @@ class Crawler(object):
 if __name__ == "__main__":
     crawler = Crawler()
 
-    crawler.start()
+    soup = BeautifulSoup(open(r'sample_house.html', 'r'), 'html.parser')
+
+    data = crawler.parser_house_page(soup)
 
     from pprint import pprint
 
-    pprint(crawler.data)
+    pprint(data)

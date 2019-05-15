@@ -31,9 +31,14 @@ crawl information about the house for sale (or rent).
 
 - [x] Test Crawler.parse_search_page(), for step 1.
 - [x] Test Crawler.parse_house_page(), for step 2.
-- [ ] Test Crawler.requset()
-- [ ] Test Crawler.start()
-- [ ] Make methods private except Crawler.start()
-- [ ] Municipal Assessment remove '$' and ','
-- [ ] Reduce keys of crawled house dict, e.g., 'bedrooms' and 'bedroom' will be merged to 'bedrooms'
+- [x] Test Crawler.request().
+- [ ] Test Crawler.start().
+- [ ] Create unit testing framework.
+- [x] Make methods private except Crawler.start().
+- [x] Municipal Assessment remove '$' and ','.
+- [x] Reduce keys of crawled house dict, e.g., 'bedrooms' and 'bedroom' will be merged to 'bedrooms'.
+- [ ] Save house json to local file periodically.
 - [ ] Use FIFO Queue as url_pool, make Crawler multithreaded.
+- [ ] Add logger.
+- [ ] Add cli progress bar.
+- [ ] Handle exceptions.
