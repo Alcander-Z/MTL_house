@@ -26,3 +26,14 @@ crawl information about the house for sale (or rent).
 - address
 - id
 - other information worth paying attention
+
+# to do list
+
+- [x] Test Crawler.parse_search_page(), for step 1.
+- [x] Test Crawler.parse_house_page(), for step 2.
+- [ ] Test Crawler.requset()
+- [ ] Test Crawler.start()
+- [ ] Make methods private except Crawler.start()
+- [ ] Municipal Assessment remove '$' and ','
+- [ ] Reduce keys of crawled house dict, e.g., 'bedrooms' and 'bedroom' will be merged to 'bedrooms'
+- [ ] Use FIFO Queue as url_pool, make Crawler multithreaded.
